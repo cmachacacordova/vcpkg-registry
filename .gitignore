@@ -1,1 +1,10 @@
 ports/i18n-redis/.gitrepo
+# Build directories
+build/
+
+# Temporary files
+*.log
+*.tmp
+
+# macOS metadata
+.DS_Store
