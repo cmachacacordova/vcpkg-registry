@@ -1,0 +1,5 @@
+uuid-h is a header-only library. Include the header and define `UUID_IMPLEMENTATION` in exactly one source file:
+
+    #define UUID_IMPLEMENTATION
+    #include <uuid.h>
+

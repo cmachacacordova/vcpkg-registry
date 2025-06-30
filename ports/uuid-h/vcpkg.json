@@ -1,0 +1,7 @@
+{
+  "name": "uuid-h",
+  "version": "0.1",
+  "description": "Single-file STB-style library to generate UUIDs",
+  "homepage": "https://github.com/wc-duck/uuid_h",
+  "license": "Zlib"
+}
