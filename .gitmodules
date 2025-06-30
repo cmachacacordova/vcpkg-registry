@@ -1,4 +1,0 @@
-[submodule "ports/i18n-redis"]
-	path = ports/i18n-redis
-	url = https://github.com/cmachacacordova/i18n-redis.git
-	branch = vcpkg
