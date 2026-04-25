@@ -1,7 +1,7 @@
 {
   "default": {
     "i18n-redis": {
-      "baseline": "0.3.0",
+      "baseline": "0.3.1",
       "port-version": 0
     },
     "pipes": {

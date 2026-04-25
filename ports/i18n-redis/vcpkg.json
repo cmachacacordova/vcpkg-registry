@@ -1,8 +1,9 @@
 {
   "name": "i18n-redis",
-  "version": "0.3.0",
-  "description": "Sample C++ library using redis-plus-plus and nlohmann-json",
+  "version": "0.3.1",
+  "description": "A C++ library for internationalization (i18n) that uses Redis as a backend for storing translations",
   "dependencies": [
+    "fmt",
     "nlohmann-json",
     "redis-plus-plus",
     {
