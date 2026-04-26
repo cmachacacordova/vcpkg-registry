@@ -1,0 +1,304 @@
+#!/usr/bin/env node
+const fs = require("fs");
+const path = require("path");
+const https = require("https");
+const crypto = require("crypto");
+
+const ROOT = path.resolve(__dirname, "..");
+
+function die(message) {
+  console.error(`Error: ${message}`);
+  process.exit(1);
+}
+
+function usage() {
+  console.log("Uso: update-port <port-name> <repository> <ref> [version]");
+  console.log("   o: update-port <port-name> <ref> [version]  # mantiene el repo actual definido en el portfile");
+  console.log("");
+  console.log("Ejemplos:");
+  console.log("  ./scripts/update-port i18n-redis https://github.com/cmachacacordova/i18n-redis v0.3.2 0.3.2");
+  console.log("  ./scripts/update-port i18n-redis https://gitlab.com/myorg/myrepo v1.0.0");
+  console.log("  ./scripts/update-port i18n-redis https://bitbucket.org/myorg/myrepo v1.0.0");
+  console.log("  ./scripts/update-port i18n-redis v0.3.2");
+  process.exit(1);
+}
+
+function readText(filePath) {
+  return fs.readFileSync(filePath, "utf8");
+}
+
+function writeText(filePath, content) {
+  fs.writeFileSync(filePath, content, "utf8");
+}
+
+function parseRepository(value) {
+  const github = value.match(/^(?:https?:\/\/github\.com\/|git@github\.com:)?([^/]+\/[A-Za-z0-9_.-]+)(?:\.git)?$/i);
+  if (github && value.includes("github.com")) {
+    return { type: "github", repo: github[1], original: value };
+  }
+
+  const gitlab = value.match(/^(?:https?:\/\/gitlab\.com\/|git@gitlab\.com:)([^/]+\/[A-Za-z0-9_.-]+)(?:\.git)?$/i);
+  if (gitlab) {
+    return { type: "gitlab", repo: gitlab[1], original: value };
+  }
+
+  const bitbucket = value.match(/^(?:https?:\/\/bitbucket\.org\/|git@bitbucket\.org:)([^/]+\/[A-Za-z0-9_.-]+)(?:\.git)?$/i);
+  if (bitbucket) {
+    return { type: "bitbucket", repo: bitbucket[1], original: value };
+  }
+
+  const archiveUrl = value.match(/^https?:\/\/.+\.(tar\.gz|zip)$/i);
+  if (archiveUrl) {
+    return { type: "archive", url: value, original: value };
+  }
+
+  const gitUrl = value.match(/^(?:https?:\/\/|git@).+\.git$/i);
+  if (gitUrl) {
+    return { type: "git", url: value, original: value };
+  }
+
+  if (/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(value)) {
+    return { type: "github", repo: value, original: value };
+  }
+
+  return { type: "unknown", original: value };
+}
+
+function getArchiveUrl(repoInfo, ref) {
+  if (!repoInfo) {
+    return null;
+  }
+
+  if (repoInfo.type === "github") {
+    return `https://github.com/${repoInfo.repo}/archive/${encodeURIComponent(ref)}.tar.gz`;
+  }
+
+  if (repoInfo.type === "gitlab") {
+    const name = repoInfo.repo.split("/").pop();
+    return `https://gitlab.com/${repoInfo.repo}/-/archive/${encodeURIComponent(ref)}/${name}-${encodeURIComponent(ref)}.tar.gz`;
+  }
+
+  if (repoInfo.type === "bitbucket") {
+    return `https://bitbucket.org/${repoInfo.repo}/get/${encodeURIComponent(ref)}.tar.gz`;
+  }
+
+  if (repoInfo.type === "archive") {
+    return repoInfo.url;
+  }
+
+  return null;
+}
+
+function detectPortfileHelper(portfileText) {
+  const match = portfileText.match(/^\s*(vcpkg_from_[a-z]+)\s*\(/im);
+  return match ? match[1].toLowerCase() : null;
+}
+
+function findRepoAndRef(portfileText) {
+  const helper = detectPortfileHelper(portfileText);
+  let repoMatch;
+
+  if (helper === "vcpkg_from_git") {
+    repoMatch = portfileText.match(/^\s*URL\s+(.+)$/m);
+  } else {
+    repoMatch = portfileText.match(/^\s*REPO\s+(.+)$/m);
+  }
+
+  const refMatch = portfileText.match(/^\s*REF\s+(.+)$/m);
+  return [repoMatch ? repoMatch[1].trim() : null, refMatch ? refMatch[1].trim() : null];
+}
+
+function updateField(text, fieldName, value) {
+  const regex = new RegExp(`(^\\s*${fieldName}\\s+).+$`, "m");
+  if (!regex.test(text)) {
+    die(`No se encontró la línea ${fieldName} en portfile.cmake`);
+  }
+  return text.replace(regex, `$1${value}`);
+}
+
+function downloadArchive(url, maxRedirects = 5) {
+  return new Promise((resolve, reject) => {
+    const request = https.get(url, { headers: { "User-Agent": "vcpkg-registry-update-port" } }, (res) => {
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        if (maxRedirects === 0) {
+          reject(new Error("Demasiadas redirecciones al descargar el archivo de origen"));
+          return;
+        }
+        const nextUrl = res.headers.location.startsWith("http") ? res.headers.location : new URL(res.headers.location, url).toString();
+        res.resume();
+        resolve(downloadArchive(nextUrl, maxRedirects - 1));
+        return;
+      }
+
+      if (res.statusCode !== 200) {
+        reject(new Error(`Fallo al descargar el archivo: ${res.statusCode} ${res.statusMessage}`));
+        return;
+      }
+
+      const chunks = [];
+      res.on("data", (chunk) => chunks.push(chunk));
+      res.on("end", () => resolve(Buffer.concat(chunks)));
+    });
+
+    request.on("error", reject);
+  });
+}
+
+async function computeArchiveSha512(url) {
+  const buffer = await downloadArchive(url);
+  return crypto.createHash("sha512").update(buffer).digest("hex");
+}
+
+function updateManifest(manifestPath, ref, version) {
+  const data = JSON.parse(readText(manifestPath));
+
+  if (version) {
+    data.version = version;
+    delete data["version-string"];
+  } else {
+    data["version-string"] = ref;
+    delete data.version;
+  }
+
+  writeText(manifestPath, JSON.stringify(data, null, 2) + "\n");
+}
+
+async function updatePortfile(portfilePath, repoInfo, ref) {
+  let text = readText(portfilePath);
+  const helper = detectPortfileHelper(text);
+
+  if (repoInfo !== null) {
+    if (helper === "vcpkg_from_git") {
+      if (!/^\s*URL\s+(.+)$/m.test(text)) {
+        die("No se encontró la línea URL en portfile.cmake para vcpkg_from_git");
+      }
+      text = updateField(text, "URL", repoInfo.url || repoInfo.original);
+    } else if (helper === "vcpkg_from_github") {
+      if (repoInfo.type !== "github") {
+        die("El portfile usa vcpkg_from_github, por lo que el repositorio debe ser de GitHub.");
+      }
+      text = updateField(text, "REPO", repoInfo.repo);
+    } else if (helper === "vcpkg_from_gitlab") {
+      if (repoInfo.type !== "gitlab") {
+        die("El portfile usa vcpkg_from_gitlab, por lo que el repositorio debe ser de GitLab.");
+      }
+      text = updateField(text, "REPO", repoInfo.repo);
+    } else if (helper === "vcpkg_from_bitbucket") {
+      if (repoInfo.type !== "bitbucket") {
+        die("El portfile usa vcpkg_from_bitbucket, por lo que el repositorio debe ser de Bitbucket.");
+      }
+      text = updateField(text, "REPO", repoInfo.repo);
+    } else if (helper === "vcpkg_from_sourceforge") {
+      text = updateField(text, "REPO", repoInfo.original);
+    } else {
+      if (/^\s*REPO\s+(.+)$/m.test(text)) {
+        text = updateField(text, "REPO", repoInfo.original);
+      } else if (/^\s*URL\s+(.+)$/m.test(text)) {
+        text = updateField(text, "URL", repoInfo.url || repoInfo.original);
+      } else {
+        die("No se encontró un campo REPO o URL válido en portfile.cmake");
+      }
+    }
+  }
+
+  if (!/^\s*REF\s+(.+)$/m.test(text)) {
+    die("No se encontró la línea REF en portfile.cmake");
+  }
+  text = text.replace(/(^\s*REF\s+).+$/m, `$1${ref}`);
+
+  const archiveUrl = getArchiveUrl(repoInfo, ref);
+  if (archiveUrl) {
+    const sha512 = await computeArchiveSha512(archiveUrl);
+    if (/^\s*SHA512\s+(.+)$/m.test(text)) {
+      text = updateField(text, "SHA512", sha512);
+    } else {
+      text = text.replace(/(^\s*REF\s+.+$)/m, `$1\n    SHA512 ${sha512}`);
+    }
+  }
+
+  writeText(portfilePath, text);
+}
+
+async function main() {
+  const args = process.argv.slice(2);
+  if (args.length < 2) {
+    usage();
+  }
+
+  const portName = args[0];
+  const raw = args.slice(1);
+  let repoInfo = null;
+  let ref = null;
+  let version = null;
+
+  const candidateRepo = raw[0];
+  const parsed = parseRepository(candidateRepo);
+
+  if (parsed.type !== "unknown") {
+    if (raw.length < 2) {
+      usage();
+    }
+    repoInfo = parsed;
+    ref = raw[1];
+    if (raw.length >= 3) {
+      version = raw[2];
+    }
+    if (raw.length > 3) {
+      usage();
+    }
+  } else {
+    ref = raw[0];
+    if (raw.length >= 2) {
+      version = raw[1];
+    }
+    if (raw.length > 2) {
+      usage();
+    }
+  }
+
+  const portDir = path.join(ROOT, "ports", portName);
+  const portfilePath = path.join(portDir, "portfile.cmake");
+  const manifestPath = path.join(portDir, "vcpkg.json");
+
+  if (!fs.existsSync(portDir) || !fs.statSync(portDir).isDirectory()) {
+    die(`El port '${portName}' no existe en ports/`);
+  }
+  if (!fs.existsSync(portfilePath)) {
+    die(`No se encontró portfile.cmake en ${portDir}`);
+  }
+  if (!fs.existsSync(manifestPath)) {
+    die(`No se encontró vcpkg.json en ${portDir}`);
+  }
+
+  const portfileText = readText(portfilePath);
+  const [currentRepo, currentRef] = findRepoAndRef(portfileText);
+  if (!currentRepo) {
+    die("No se pudo determinar el repositorio actual del portfile");
+  }
+
+  if (!repoInfo) {
+    const currentParsed = parseRepository(currentRepo);
+    repoInfo = currentParsed.type !== "unknown"
+      ? currentParsed
+      : { type: "unknown", original: currentRepo };
+  }
+
+  updateManifest(manifestPath, ref, version);
+  await updatePortfile(portfilePath, repoInfo, ref);
+
+  console.log("Actualización completada:");
+  console.log(`  Port: ${portName}`);
+  console.log(`  Repository: ${repoInfo.original}`);
+  console.log(`  Ref: ${ref}`);
+  if (version) {
+    console.log(`  Version: ${version}`);
+    console.log("  El campo 'version' se actualizó en vcpkg.json");
+  } else {
+    console.log(`  Version-string: ${ref}`);
+    console.log("  El campo 'version-string' se actualizó en vcpkg.json");
+  }
+}
+
+main().catch((error) => {
+  die(error.message || String(error));
+});
