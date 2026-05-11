@@ -1,15 +1,7 @@
 {
   "default": {
-    "folly": {
-      "baseline": "2026.02.23.00",
-      "port-version": 0
-    },
     "i18n-redis": {
       "baseline": "0.3.2",
-      "port-version": 0
-    },
-    "log4cxx": {
-      "baseline": "1.7.0",
       "port-version": 0
     },
     "pipes": {
@@ -18,10 +10,6 @@
     },
     "uuid-h": {
       "baseline": "0.1",
-      "port-version": 0
-    },
-    "zlib": {
-      "baseline": "2.3.3",
       "port-version": 0
     }
   }
