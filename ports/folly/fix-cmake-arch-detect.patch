@@ -1,0 +1,36 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index b84f338..850e09e 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -102,16 +102,23 @@ if(NOT CMAKE_CXX_STANDARD)
+   message(STATUS "setting C++ standard to C++${CMAKE_CXX_STANDARD}")
+ endif()
+ 
+-if(NOT DEFINED IS_X86_64_ARCH AND ${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64|AMD64")
+-  set(IS_X86_64_ARCH TRUE)
+-else()
+-  set(IS_X86_64_ARCH FALSE)
++message(STATUS ${CMAKE_SYSTEM_PROCESSOR})
++
++
++if(NOT DEFINED IS_X86_64_ARCH)
++  if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64|AMD64")
++    set(IS_X86_64_ARCH TRUE)
++  else()
++    set(IS_X86_64_ARCH FALSE)
++  endif()
+ endif()
+ 
+-if(NOT DEFINED IS_AARCH64_ARCH AND ${CMAKE_SYSTEM_PROCESSOR} MATCHES "aarch64")
+-  set(IS_AARCH64_ARCH TRUE)
+-else()
+-  set(IS_AARCH64_ARCH FALSE)
++if(NOT DEFINED IS_AARCH64_ARCH)
++  if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "aarch64")
++    set(IS_AARCH64_ARCH TRUE)
++  else()
++    set(IS_AARCH64_ARCH FALSE)
++  endif()
+ endif()
+ 
+ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
