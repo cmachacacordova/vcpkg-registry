@@ -1,6 +1,6 @@
 {
   "name": "i18n-redis",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "A C++ library for internationalization (i18n) that uses Redis as a backend for storing translations",
   "dependencies": [
     "fmt",
