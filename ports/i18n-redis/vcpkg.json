@@ -1,12 +1,15 @@
 {
   "name": "i18n-redis",
-  "version": "1.0.0-SNAPSHOT",
+  "version": "1.0.1-SNAPSHOT",
   "description": "A C++20 library for internationalization using Redis as backend",
   "dependencies": [
     "fmt",
     {
       "name": "redis-plus-plus",
-      "features": ["cxx17", "async"]
+      "features": [
+        "async",
+        "cxx17"
+      ]
     },
     {
       "name": "vcpkg-cmake",
@@ -17,21 +20,34 @@
       "host": true
     }
   ],
-  "default-features": ["simdjson"],
+  "default-features": [
+    "simdjson"
+  ],
   "features": {
     "simdjson": {
       "description": "Use simdjson for JSON parsing",
-      "dependencies": [{
-        "name": "simdjson",
-        "features": ["exceptions", "utf8-validation", "threads"]
-      }]
+      "dependencies": [
+        {
+          "name": "simdjson",
+          "features": [
+            "exceptions",
+            "threads",
+            "utf8-validation"
+          ]
+        }
+      ]
     },
     "yyjson": {
       "description": "Use yyjson for JSON parsing",
-      "dependencies": [{
-        "name": "yyjson",
-        "features": ["reader", "writer"]
-      }]
+      "dependencies": [
+        {
+          "name": "yyjson",
+          "features": [
+            "reader",
+            "writer"
+          ]
+        }
+      ]
     }
   }
 }
