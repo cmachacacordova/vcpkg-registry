@@ -69,7 +69,7 @@ else()
     else()
         message(STATUS "Configuring apr")
     endif()
-    set(ENV{CFLAGS} "$ENV{CFLAGS} -Wno-error=implicit-function-declaration")
+    set(ENV{CFLAGS} "$ENV{CFLAGS} -Wno-error=implicit-function-declaration -fPIC")
     vcpkg_make_configure(
         SOURCE_PATH "${SOURCE_PATH}"
         OPTIONS

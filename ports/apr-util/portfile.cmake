@@ -83,6 +83,7 @@ else()
         message(STATUS "Configuring apr-util")
     endif()
 
+    set(ENV{CFLAGS} "$ENV{CFLAGS} -fPIC")
     vcpkg_configure_make(
         SOURCE_PATH "${SOURCE_PATH}"
         OPTIONS
