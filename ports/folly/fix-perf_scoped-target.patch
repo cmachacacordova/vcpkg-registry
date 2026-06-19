@@ -1,5 +1,5 @@
 diff --git a/folly/detail/CMakeLists.txt b/folly/detail/CMakeLists.txt
-index 521983f..9627d6e 100644
+index 521983f..7bbfb6d 100644
 --- a/folly/detail/CMakeLists.txt
 +++ b/folly/detail/CMakeLists.txt
 @@ -182,6 +182,9 @@ folly_add_library(
