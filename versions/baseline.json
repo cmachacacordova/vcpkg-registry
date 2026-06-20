@@ -1,7 +1,7 @@
 {
   "default": {
     "i18n-redis": {
-      "baseline": "1.2.1-SNAPSHOT",
+      "baseline": "1.2.2-RELEASE",
       "port-version": 0
     },
     "pipes": {
