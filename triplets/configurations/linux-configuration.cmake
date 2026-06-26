@@ -1,5 +1,5 @@
-string(APPEND VCPKG_C_FLAGS " -fPIC -Wno-maybe-uninitialized")
-string(APPEND VCPKG_CXX_FLAGS " -fPIC -Wno-maybe-uninitialized")
+string(APPEND VCPKG_C_FLAGS " -fPIC -fvisibility=default -Wno-maybe-uninitialized")
+string(APPEND VCPKG_CXX_FLAGS " -fPIC -fvisibility=default -Wno-maybe-uninitialized")
 string(APPEND VCPKG_LINKER_FLAGS " -fuse-ld=lld")
 
 set(ZLIB_COMPAT ON)
