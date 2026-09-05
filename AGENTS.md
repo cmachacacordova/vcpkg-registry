@@ -154,14 +154,31 @@ $env:VCPKG_HOME = "C:\ruta\a\vcpkg"
 - Mantener `ZLIB_COMPAT=ON` en cualquier triplet nuevo o configuración compartida.
 - Preferir `-fPIC` y `-fvisibility=default` en builds no-Windows para mantener compatibilidad con consumidores dinámicos.
 - **Siempre informar al usuario** qué cambios se hicieron en los ports después de ejecutar `update_ports.sh` / `update_ports.ps1`, incluso si el resultado fue "sin cambios". El resumen debe incluir: ports actualizados, overlays manuales omitidos, y cualquier port local que no exista en upstream.
+- **Todo cambio en `staged` debe reflejarse en `AGENTS.md`**: si hay archivos en `staged` que correspondan a una decisión, modificación de port, nuevo triplet o cualquier cambio relevante, actualiza este archivo antes o junto con el commit. No es necesario documentar cambios que aún no estén en `staged`.
 
 ## Decisiones del proyecto
 
 Las decisiones importantes se registran en este archivo, no en archivos de log efímeros.
-**Solo se documentan decisiones reflejadas en Git**: cambios que estén en `staged`, en el working tree como parte del diff, o en el historial (`git log`). Si una decisión aún no aparece en Git, no se registra aquí hasta que esté confirmada en el repositorio.
+**Solo se documentan decisiones reflejadas en `staged`**: si hay archivos en `staged` que representen una decisión importante, actualiza `AGENTS.md` para reflejar esos cambios antes de hacer commit. No documentes decisiones que aún no estén en `staged` ni formen parte del repositorio.
 
 - El script original `update_ports.sh` exigía ejecutarse desde su propia carpeta y no copiaba archivos ocultos. Se corrigió para poder invocarse desde cualquier lugar y para copiar todo el contenido de cada port.
 - Se creó `update_ports.ps1` para poder ejecutar la actualización desde Windows sin depender de Git Bash.
 - `zlib` es un **overlay manual**: reemplaza el port upstream `madler/zlib` por `zlib-ng/zlib-ng` con `ZLIB_COMPAT=ON`. Por eso está en la lista `MANUAL_PORTS` / `$ManualPorts` y no se actualiza automáticamente.
 - Los scripts imprimen un resumen al finalizar y soportan modo reporte (`--dry-run` / `-ReportOnly`) para revisar qué harían sin modificar archivos.
 - Las decisiones de agregar o eliminar ports del registro deben reflejarse actualizando esta guía (`AGENTS.md`) y, si aplica, la lista de overlays manuales en los scripts.
+
+## Skill para agentes: actualización de ports
+
+> Esta sección es una guía de comportamiento que los agentes podemos seguir cuando detectemos que los ports necesitan actualizarse. Puede ignorarse si el usuario da instrucciones explícitas de otro modo.
+
+Si durante una tarea detectas que uno o más ports de este registro podrían necesitar actualización —por ejemplo, porque hay un nuevo upstream, fallos de build, advertencias de CVE, el problema que reporta el usuario podría solucionarse actualizando los ports, se detectan cambios en los ports, o el usuario lo solicita—, **pregunta al usuario antes de ejecutar `update_ports.sh` o `update_ports.ps1`**.
+
+Sigue este orden:
+
+1. **Informa al usuario** qué port(s) quieres actualizar y por qué.
+2. **Pregunta si quiere proseguir** con la actualización.
+3. Si acepta, **verifica** que `VCPKG_HOME` apunta a una instalación local de vcpkg.
+4. **Ejecuta** el script correspondiente y revisa el diff resultante para asegurarte de que los cambios/forks documentados se mantienen.
+5. **Reporta** el resumen: ports actualizados, overlays manuales omitidos, y ports locales que no existan en upstream.
+
+No ejecutes la actualización automáticamente sin confirmación.
