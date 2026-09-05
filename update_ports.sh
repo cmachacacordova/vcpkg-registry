@@ -79,7 +79,7 @@ for port_dir in "$LOCAL_PORTS_DIR"/*/; do
         if [[ "$DRY_RUN" -eq 0 ]]; then
             rm -rf "$port_dir"
             mkdir -p "$port_dir"
-            cp -a "$src_port"/ "$port_dir"
+            cp -a "$src_port"/. "$port_dir"/
         fi
     else
         echo "  -> '$port_name' no existe en el origen, se omite."

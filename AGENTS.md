@@ -129,6 +129,7 @@ $env:VCPKG_HOME = "C:\ruta\a\vcpkg"
 **Comportamiento:**
 - Los ports listados en `MANUAL_PORTS` / `$ManualPorts` se omiten y se reportan como overlays manuales.
 - El resto se sobrescribe completamente con la versión del upstream local.
+- El script Bash copia el contenido de cada port mediante `cp -a "$src_port"/. "$port_dir"/`; el sufijo `/.` evita crear una subcarpeta duplicada dentro del destino y conserva los archivos ocultos.
 - Al finalizar se imprime un resumen: ports actualizados, manuales y locales que no existen en upstream.
 - Si un port local no existe en upstream, se advierte para que decidas si quitarlo del registro.
 - **No se escribe ningún archivo de log**; las decisiones relevantes se registran en este `AGENTS.md`.
@@ -161,7 +162,7 @@ $env:VCPKG_HOME = "C:\ruta\a\vcpkg"
 Las decisiones importantes se registran en este archivo, no en archivos de log efímeros.
 **Solo se documentan decisiones reflejadas en `staged`**: si hay archivos en `staged` que representen una decisión importante, actualiza `AGENTS.md` para reflejar esos cambios antes de hacer commit. No documentes decisiones que aún no estén en `staged` ni formen parte del repositorio.
 
-- El script original `update_ports.sh` exigía ejecutarse desde su propia carpeta y no copiaba archivos ocultos. Se corrigió para poder invocarse desde cualquier lugar y para copiar todo el contenido de cada port.
+- El script original `update_ports.sh` exigía ejecutarse desde su propia carpeta y no copiaba archivos ocultos. Se corrigió para poder invocarse desde cualquier lugar y copiar todo el contenido de cada port con `cp -a "$src_port"/. "$port_dir"/`, evitando que el directorio fuente se anide dentro del destino.
 - Se creó `update_ports.ps1` para poder ejecutar la actualización desde Windows sin depender de Git Bash.
 - `zlib` es un **overlay manual**: reemplaza el port upstream `madler/zlib` por `zlib-ng/zlib-ng` con `ZLIB_COMPAT=ON`. Por eso está en la lista `MANUAL_PORTS` / `$ManualPorts` y no se actualiza automáticamente.
 - Los scripts imprimen un resumen al finalizar y soportan modo reporte (`--dry-run` / `-ReportOnly`) para revisar qué harían sin modificar archivos.
