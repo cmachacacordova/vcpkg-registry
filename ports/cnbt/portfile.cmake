@@ -9,6 +9,7 @@ vcpkg_from_github(
     PATCHES
         0001-cmake-export-and-install.patch
         0002-msvc-vla-fix.patch
+        0003-msvc-restrict-fix.patch
 )
 
 vcpkg_cmake_configure(

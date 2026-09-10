@@ -1,6 +1,7 @@
 {
   "name": "cnbt",
   "version": "0.1.0",
+  "port-version": 1,
   "description": "A C library for reading and writing Minecraft NBT files",
   "homepage": "https://github.com/nickelpro/cNBT",
   "license": "Beerware",

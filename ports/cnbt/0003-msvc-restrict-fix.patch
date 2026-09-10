@@ -1,0 +1,47 @@
+diff --git a/list.h b/list.h
+index 3c8d234..3ff4c47 100644
+--- a/list.h
++++ b/list.h
+@@ -3,6 +3,19 @@
+ 
+ #include <stddef.h>
+ 
++/* C++ consumers may pull in this header directly. The `restrict` keyword is
++ * not valid in standard C++, and MSVC does not accept it as a qualifier.
++ * Normalize it to the compiler-specific extension before any declarations. */
++#ifdef __cplusplus
++#ifndef restrict
++#ifdef _MSC_VER
++#define restrict __restrict
++#else
++#define restrict __restrict__
++#endif
++#endif
++#endif
++
+ /*
+  * Represents a single entry in the list. This must be embedded in your linked
+  * structure.
+diff --git a/nbt.h b/nbt.h
+index bd85915..1115649 100644
+--- a/nbt.h
++++ b/nbt.h
+@@ -10,8 +10,18 @@
+ #ifndef NBT_H
+ #define NBT_H
+ 
++/* `restrict` is C99 and not valid in standard C++. MSVC also lacks it in C mode,
++ * so map it to the compiler-specific qualifier before it appears in declarations. */
++#if defined(_MSC_VER) && !defined(__cplusplus)
++#define restrict __restrict
++#endif
++
+ #ifdef __cplusplus
++#ifdef _MSC_VER
++#define restrict __restrict
++#else
+ #define restrict __restrict__
++#endif
+ extern "C" {
+ #endif
+ 

@@ -2,7 +2,7 @@
   "default": {
     "cnbt": {
       "baseline": "0.1.0",
-      "port-version": 0
+      "port-version": 1
     },
     "i18n-redis": {
       "baseline": "1.3.4-RELEASE",
