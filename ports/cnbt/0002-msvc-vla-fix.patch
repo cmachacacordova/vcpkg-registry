@@ -1,0 +1,21 @@
+diff --git a/nbt_parsing.c b/nbt_parsing.c
+index 834d1ec..cb3cdd8 100644
+--- a/nbt_parsing.c
++++ b/nbt_parsing.c
+@@ -467,13 +467,15 @@ static void indent(struct buffer* b, size_t amount)
+ {
+     size_t spaces = amount * 4; /* 4 spaces per indent */
+ 
+-    char temp[spaces + 1];
++    char* temp = malloc(spaces + 1);
++    if(!temp) return;
+ 
+     for(size_t i = 0; i < spaces; ++i)
+         temp[i] = ' ';
+     temp[spaces] = '\0';
+ 
+     bprintf(b, "%s", temp);
++    free(temp);
+ }
+ 
+ static nbt_status __nbt_dump_ascii(const nbt_node*, struct buffer*, size_t ident);

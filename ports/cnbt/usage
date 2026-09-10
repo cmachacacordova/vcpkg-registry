@@ -1,0 +1,8 @@
+cnbt provides CMake targets:
+
+    find_package(cnbt CONFIG REQUIRED)
+    target_link_libraries(main PRIVATE cnbt::nbt)
+
+The public headers are installed under the `cnbt/` prefix:
+
+    #include <cnbt/nbt.h>
