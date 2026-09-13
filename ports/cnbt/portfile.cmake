@@ -7,9 +7,7 @@ vcpkg_from_github(
     SHA512 795a9480735ab632791611729ba8d7d0f0f5ad5ceaee67399c3c97fed301c2c6d194c855ff9ac064bed896512de219c03a809ef15abca2097766be3977394396
     HEAD_REF master
     PATCHES
-        0001-cmake-export-and-install.patch
-        0002-msvc-vla-fix.patch
-        0003-msvc-restrict-fix.patch
+        0001-cnbt-vcpkg.patch
 )
 
 vcpkg_cmake_configure(
